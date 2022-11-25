@@ -1,0 +1,117 @@
+from pandas_datareader import data as pdr
+from suds.client import Client
+import datetime
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import sys
+
+startDate, endDate, mySite = input("Enter start date, end date, and mySite - MM/DD/YYYY MM/DD/YYYY XXXXXXXX: ").split()
+print(startDate)
+
+start1 = datetime.datetime.strptime(startDate, '%m/%d/%Y').strftime('%Y-%m-%d')
+print(start1)
+print(endDate)
+
+end1 = datetime.datetime.strptime(endDate, '%m/%d/%Y').strftime('%Y-%m-%d')
+print(end1)
+print(mySite)
+
+site = 'http://hydroportal.cuahsi.org/nwisuv/cuahsi_1_1.asmx?WSDL'
+NWIS = Client(site).service
+line = 'NWISUV:' + mySite
+series = NWIS.GetSiteInfoObject(line)
+siteName = series.site[0].siteInfo.siteName
+
+waterTemp = 'NWISUV:00010'
+airTemp = 'NWISUV:00021'
+windSpeed = 'NWISUV:00035'
+discharge = 'NWISUV:00060'
+
+series2 = NWIS.GetValuesObject(line, waterTemp, start1, end1)
+series3 = NWIS.GetValuesObject(line, airTemp, start1, end1)
+series4 = NWIS.GetValuesObject(line, windSpeed, start1, end1)
+series5 = NWIS.GetValuesObject(line, discharge, start1, end1)
+waterFahrValues = []
+
+
+if not (Client.dict(series2)['timeSeries'][0]):
+   sys.exit()
+
+try:
+    getattr (series2.timeSeries[0].values[0], 'value')        
+except AttributeError:
+    print ("No value")
+else:
+    values = series2.timeSeries[0].values[0].value
+    waterCelValues = []
+    time = []
+    for v in values:
+        waterCelValues.append(float(v.value))
+        time.append(v._dateTime)
+        waterFahrValues.append(float(v.value))
+    
+if not (Client.dict(series3)['timeSeries'][0]):
+    sys.exit()
+
+try:
+    getattr (series3.timeSeries[0].values[0], 'value')        
+except AttributeError:
+    print ("No value")
+else:
+    values = series3.timeSeries[0].values[0].value
+    airTempValues = []
+    time = []
+    for v in values:
+        airTempValues.append(float(v.value))
+        time.append(v._dateTime)
+    
+if not (Client.dict(series4)['timeSeries'][0]):
+    sys.exit()
+try:
+    getattr (series4.timeSeries[0].values[0], 'value')
+except AttributeError:
+    print ("No value")
+else:
+    values = series4.timeSeries[0].values[0].value
+    windSpeedValues = []
+    time = []
+    for v in values:
+        windSpeedValues.append(float(v.value))
+        time.append(v._dateTime)
+    
+if not (Client.dict(series5)['timeSeries'][0]):
+    sys.exit()
+try:
+    getattr ( series5.timeSeries[0].values[0], 'value')        
+except AttributeError:
+    print ("No value")
+else:
+    values = series5.timeSeries[0].values[0].value
+    dischargeValues=[]
+    time = []
+    for v in values:
+        dischargeValues.append(float(v.value))
+        time.append(v._dateTime)
+    
+for t in range(len(waterFahrValues)):
+    waterFahrValues[t] = (waterFahrValues[t] * 9/5) + 32
+    
+allData = list(zip(time, waterCelValues, waterFahrValues, airTempValues, windSpeedValues, dischargeValues))
+df = pd.DataFrame(data = allData, columns=["Dates & Times","Celsius Water Temps", "Fahrenheit Water Temps", "Air Temps", "Wind Speeds", "Discharge"])
+
+print('\n'"Table: Min, Max, Mean, and Standard Deviation: ")
+display(df.describe().loc[['min', 'max', 'mean', 'std']])
+
+print('\n'"Table: Missing Values or 0 Values: ")
+display(df.isnull().values.any())
+
+print('\n'"Daily Avgs: ")
+newFrame = df.copy()
+newFrame['Dates'] = pd.to_datetime(newFrame['Dates & Times']).dt.date
+allDates = newFrame.groupby('Dates')
+display(allDates.aggregate(np.mean).tail())
+
+#df.plot(x = 'Dates & Times')
+df.plot(x = "Dates & Times", y = ["Celsius Water Temps", "Air Temps", "Wind Speeds", "Discharge"], title = siteName)
+plt.show
