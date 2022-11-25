@@ -1,0 +1,79 @@
+from sympy import *
+from numpy.linalg import matrix_power
+from numpy import linalg as la
+import numpy as np
+import matplotlib.pyplot as plt
+
+#Leslie Matrix (point #1)
+populationArray = []
+with open("HW4shortData.txt") as myFile:
+    rows = [line.rstrip('\n') for line in myFile]
+    products = [line.split(' ') for line in rows]
+    
+populationArray.extend(products[3])
+del products[3] #Deletes initial population of age group in .txt file
+for i in range(0,3):
+    print(products[i])
+    
+print('\n')
+
+#Eigenvalues / Eigenvectors (point #2)
+n = np.array(products, dtype = float)
+eigenvalue, eigenvector = la.eig(n)
+print(eigenvalue)
+print('\n')
+print(eigenvector)
+print('\n')
+
+#Long term behavior outcome (point #3)       
+count = 0
+for j in range(0, 3):
+    if eigenvalue[j] < 1:
+        count = 0
+        print("Population is DECLINING.")
+    elif eigenvalue[j] > 1:
+        count = 1
+        print("Population is GROWING.")
+        break
+    else:
+        count = 2
+        print("Population is STABLE.")
+        
+print('\n')
+        
+#Long term behavior % distribution between the 3 age groups (point #4)
+for k in range (0,3):
+    populationArray[k] = int (populationArray[k])
+
+#% population dustribution, for first 100 time periods (point #5)
+timePeriods = 100
+estimation = matrix_power(n,(timePeriods - 1))
+estimation = np.matmul(estimation, populationArray)
+results1 = estimation[0] / sum(estimation)
+results2 = estimation[1] / sum(estimation)
+results3 = estimation[2] / sum(estimation)
+print("Age 1: ", results1 * 100, '%') #Calculates Percentage
+print("Age 2: ", results2 * 100, '%') #Calculates Percentage
+print("Age 3: ", results3 * 100, '%') #Calculates Percentage
+age1Population = []
+age2Population = []
+age3Population = []
+
+for l in range(timePeriods + 1):
+    population = matrix_power(n,(l - 1))
+    population = np.matmul(population, populationArray)
+    if(l > 0):
+        age1Population.append(population[0] / sum(population))
+        age2Population.append(population[1] / sum(population))
+        age3Population.append(population[2] / sum(population))
+
+#Plotting percent population distributed.
+fig, ax = plt.subplots()
+x = np.arange(0,100, 1)
+ax.set_title("Percent Population Distribution")
+ax.plot(x, age1Population, label = r"age #1")
+ax.plot(x, age2Population, label = r"age #2")
+ax.plot(x, age3Population, label = r"age #3")
+ax.set_xlabel('Time Periods')
+ax.set_ylabel ('Percent of Population Distribution')
+ax.legend(loc = 1)
