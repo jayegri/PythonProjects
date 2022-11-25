@@ -1,0 +1,64 @@
+import scipy.integrate as integrate
+import scipy.special as special
+from sympy import *
+import math
+import matplotlib.pyplot as plt
+
+#User's input height, velocity, angle (in that order)
+ht, vel, angle = input("Input the height, velocity, and angle: ").split()
+g = 9.8
+acceleration = -1 * g #acceleration = -gravity in the y direction
+
+a, t = symbols('a t')
+v = Function('v')
+velocityEquation = Eq(v(t), Integral(a, t))
+display(velocityEquation)
+s = Function('s')
+displacementEquation= Eq(s(t), Integral(v(t), t))
+display(displacementEquation)
+
+#Projectile Equations
+v, v0, s0, r = symbols('v v0 s0 r')
+v = Function('v')
+projEquation1 = Eq(v(t), integrate(a, t) + v0)
+s = Function('s')
+projEquation2 = Eq(s(t), integrate((integrate(a, t)), t) + v0 * t + s0)
+
+print('\n')
+
+#Kinematics Equations
+kinEquation3 = projEquation1.subs(v0, 'v0x').subs(a, 'ax').subs(v(t), 'vx(t)')
+kinEquation4 = projEquation1.subs(v0, 'v0y').subs(a, 'ay').subs(v(t), 'vy(t)')
+kinEquation5 = projEquation2.subs(s0, 's0x').subs(a, 'ax').subs(s(t), 'sx(t)').subs(v0, 'v0x')
+kinEquation6 = projEquation2.subs(s0, 's0y').subs(a, 'ay').subs(s(t), 'sy(t)').subs(v0, 'v0y')
+display(kinEquation3)
+display(kinEquation4)
+display(kinEquation5)
+display(kinEquation6)
+
+horiVelocity = float(vel) * cos(math.radians(int(angle)))
+vertVelocity = float(vel) * sin(math.radians(int(angle)))
+
+maximumHeight = float(ht) + vertVelocity ** 2 / (2 * g)
+maximumRange = (horiVelocity * ((vertVelocity + sqrt(vertVelocity ** 2 + (2 * g * float(ht)))) / g))
+timeMaxHeight = ((vertVelocity + sqrt(vertVelocity ** 2 + (2 * g * float(ht)))) / (2 * g))
+
+#Output user input
+print("Your entered height: " + ht)
+print("Your entered initial velocity: " + vel)
+print("Your entered angle: " + angle)
+
+print("\nTime for maximum height: " + str(timeMaxHeight))
+print("Maximum height: " + str(maximumHeight))
+print("Range: " + str(maximumRange))
+
+#Plot range against height
+#fig, ax = plt.subplots()
+plt.plot(maximumHeight, maximumRange, 'ro')
+plt.title('Plot of Range Against Height')
+plt.xlabel('Range',) 
+plt.ylabel('Height')
+#ax.plot(o, Range, label = r"Range")
+#ax.plot(o, Height, label = r"Height")
+#ax.legend(loc = 1)
+plt.show()
